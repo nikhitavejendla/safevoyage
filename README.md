@@ -17,6 +17,8 @@ SafeVoyage is a 9responsive web application designed with an urgent yet accessib
 1. Tourist Mobile App View: Simulates a localized smartphone experience for travelers, offering translated alerts, safe zone navigation, SOS broadcasting, and verified news feeds.
 2. Emergency Command Center View: Simulates a high level dispatch dashboard for municipal responders to trigger live broadcasts and manage incoming emergency beacons.
 
+**********************DEMO VIDEO*************************
+https://drive.google.com/file/d/1sZaJUi5wqGKHXLh5dHcLg5IQdBy2eYie/view?usp=sharing
 ->Key Features
 
 1.Tourist Mobile App View
