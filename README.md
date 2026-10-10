@@ -1,9 +1,7 @@
 app link: https://wander-wise-safe.lovable.app
 SafeVoyage
 > Real Time Crisis Communication & Safety Management for Tourists During Extreme Weather Events
-
 ->Context & Problem Statement
-
 When localized extreme weather events occur such as sudden flash floods,cyclones or landslides foreign tourists are extremely vulnerable due to a lack of local geographic knowledge and language barriers. 
 
 -Fragmented broadcasts: Local weather warnings and emergency declarations are rarely translated or localized for international travelers[cite: 2].
