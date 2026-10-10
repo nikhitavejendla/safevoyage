@@ -1,13 +1,20 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useState } from "react";
-import { ALERT_TEMPLATES, EMBASSIES, FIRST_AID, HELPLINES, LANGS, LOCATIONS, ago, type Alert, type Lang, type Report } from "@/lib/voyage-data";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { ALERT_TEMPLATES, EMBASSIES, FIRST_AID, HELPLINES, LANGS, LOCATIONS, ago, uid, type Alert, type Lang, type Report } from "@/lib/voyage-data";
+import { supabase, toAlert, type AlertRow } from "@/lib/supabase";
 import type { Filters } from "./CrisisMap";
 
 const CrisisMap = lazy(() => import("./CrisisMap"));
 
-type Props = { alert: Alert | undefined; reports: Report[]; now: number; onReport: (text: string, location: string) => void; onSOS: () => void; sosSent: boolean };
+// `alert`, `onSOS` and `sosSent` are now handled inside the component via Supabase.
+type Props = { reports: Report[]; now: number; onReport: (text: string, location: string) => void };
 
-export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: Props) {
+export function TouristView({ reports, now, onReport }: Props) {
+  const [alert, setAlert] = useState<Alert | undefined>();
+  const [sosState, setSosState] = useState<"idle" | "locating" | "sent" | "error">("idle");
+  const [sosError, setSosError] = useState<string | null>(null);
+  const sosSent = sosState === "sent";
+
   const [lang, setLang] = useState<Lang>("en");
   const [speaking, setSpeaking] = useState(false);
   const [filters, setFilters] = useState<Filters>({ shelter: true, medical: true, routes: true });
@@ -16,6 +23,64 @@ export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: P
   const [text, setText] = useState("");
   const [loc, setLoc] = useState<string>(LOCATIONS[0] ?? "Baga");
   const [kitOpen, setKitOpen] = useState<string | null>(null);
+
+  /* Load latest alert + listen for new ones in realtime */
+  useEffect(() => {
+    let active = true;
+
+    supabase
+      .from("alerts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data, error }) => {
+        if (error) return console.error("alerts load:", error.message);
+        if (active && data?.[0]) setAlert(toAlert(data[0] as AlertRow));
+      });
+
+    const channel = supabase
+      .channel("tourist-alerts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "alerts" }, (p) => {
+        setAlert(toAlert(p.new as AlertRow));
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  /* SOS: capture GPS, insert into sos_beacons */
+  const onSOS = () => {
+    if (sosState === "locating" || sosSent) return;
+    setSosError(null);
+    if (!("geolocation" in navigator)) {
+      setSosState("error");
+      return setSosError("Geolocation is not supported on this device.");
+    }
+    setSosState("locating");
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { error } = await supabase.from("sos_beacons").insert({
+          name: `Tourist-${uid().slice(0, 4)}`,
+          status: "Needs Rescue",
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          note: `Accuracy ±${Math.round(pos.coords.accuracy)}m`,
+        });
+        if (error) {
+          setSosState("error");
+          setSosError(error.message);
+        } else setSosState("sent");
+      },
+      (err) => {
+        setSosState("error");
+        setSosError(err.code === err.PERMISSION_DENIED ? "Location permission denied. Please enable GPS and retry." : "Could not get your location. Please retry.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
 
   const t = alert ? ALERT_TEMPLATES[alert.kind] : undefined;
   const msg = t && alert ? t.text[lang].replace("{s}", alert.sector) : "";
@@ -55,9 +120,10 @@ export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: P
           </section>
         )}
 
-        <button onClick={onSOS} disabled={sosSent} className={`w-full rounded-2xl py-5 text-xl font-bold text-on-color shadow-lg transition active:scale-95 ${sosSent ? "bg-safe" : "bg-danger hover:brightness-110"}`}>
-          {sosSent ? "✓ SOS sent — GPS shared with rescue" : "🆘 SOS / Need Help"}
+        <button onClick={onSOS} disabled={sosSent || sosState === "locating"} className={`w-full rounded-2xl py-5 text-xl font-bold text-on-color shadow-lg transition active:scale-95 ${sosSent ? "bg-safe" : "bg-danger hover:brightness-110"}`}>
+          {sosSent ? "✓ SOS sent — GPS shared with rescue" : sosState === "locating" ? "Getting your location…" : "🆘 SOS / Need Help"}
         </button>
+        {sosError && <p role="alert" className="-mt-2 text-sm text-danger">{sosError}</p>}
 
         <section className="rounded-2xl border bg-card p-3">
           <h2 className="font-bold">Safe-zone map</h2>
@@ -114,9 +180,9 @@ export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: P
         <section className="rounded-2xl border bg-card">
           <h2 className="px-3 pt-3 font-bold">Offline Survival Kit <span className="text-xs font-normal text-safe">· available offline</span></h2>
           {[
-            { id: "num", title: "Emergency numbers", items: HELPLINES.map((h) => [h.name, h.num]) },
-            { id: "emb", title: "Embassy contacts", items: EMBASSIES.map((h) => [h.name, h.num]) },
-            { id: "aid", title: "First-aid checklist", items: FIRST_AID.map((f) => [f, ""]) },
+            { id: "num", title: "Emergency numbers", items: HELPLINES.map((h): [string, string] => [h.name, h.num]) },
+            { id: "emb", title: "Embassy contacts", items: EMBASSIES.map((h): [string, string] => [h.name, h.num]) },
+            { id: "aid", title: "First-aid checklist", items: FIRST_AID.map((f): [string, string] => [f, ""]) },
           ].map((s) => (
             <div key={s.id} className="border-t first:border-t-0">
               <button onClick={() => setKitOpen(kitOpen === s.id ? null : s.id)} aria-expanded={kitOpen === s.id} className="flex w-full justify-between px-3 py-3 text-sm font-medium">
