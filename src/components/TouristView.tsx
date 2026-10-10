@@ -5,7 +5,7 @@ import type { Filters } from "./CrisisMap";
 
 const CrisisMap = lazy(() => import("./CrisisMap"));
 
-type Props = { alert?: Alert; reports: Report[]; now: number; onReport: (text: string, location: string) => void; onSOS: () => void; sosSent: boolean };
+type Props = { alert: Alert | undefined; reports: Report[]; now: number; onReport: (text: string, location: string) => void; onSOS: () => void; sosSent: boolean };
 
 export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: Props) {
   const [lang, setLang] = useState<Lang>("en");
@@ -14,7 +14,7 @@ export function TouristView({ alert, reports, now, onReport, onSOS, sosSent }: P
   const [tab, setTab] = useState<"official" | "crowd">("official");
   const [showForm, setShowForm] = useState(false);
   const [text, setText] = useState("");
-  const [loc, setLoc] = useState(LOCATIONS[0]);
+  const [loc, setLoc] = useState<string>(LOCATIONS[0] ?? "Baga");
   const [kitOpen, setKitOpen] = useState<string | null>(null);
 
   const t = alert ? ALERT_TEMPLATES[alert.kind] : undefined;

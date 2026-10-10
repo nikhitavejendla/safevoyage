@@ -8,7 +8,7 @@ type Props = { alerts: Alert[]; beacons: Beacon[]; now: number; devices: number;
 
 export function CommandCenter({ alerts, beacons, now, devices, onBroadcast, onStatus }: Props) {
   const [kind, setKind] = useState<AlertKind>("flood");
-  const [sector, setSector] = useState(SECTORS[3]);
+  const [sector, setSector] = useState<string>(SECTORS[3] ?? "Sector 4");
   const [sent, setSent] = useState(false);
   const rescue = beacons.filter((b) => b.status === "Needs Rescue").length;
 
