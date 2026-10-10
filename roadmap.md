@@ -1,2 +1,3 @@
 # Roadmap
-- [x] Dashboard: alert banner w/ translation, Leaflet map (safe zones, routes, flood areas), community feed, offline checklist + helplines
+- [x] Dashboard v1
+- [ ] SafeVoyage: view toggle (Tourist / Command Center), dark mode, TTS, map filters, feed tabs, SOS beacons, survival kit, dispatcher

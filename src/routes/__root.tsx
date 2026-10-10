@@ -78,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SafeHarbor — Crisis alerts for travelers" },
+      { title: "SafeVoyage — Crisis communication for tourists" },
       { name: "description", content: "Verified, translated extreme-weather alerts and safe zones for tourists." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "SafeHarbor — Crisis alerts for travelers" },
+      { property: "og:title", content: "SafeVoyage — Crisis communication for tourists" },
       { property: "og:description", content: "Verified, translated extreme-weather alerts and safe zones for tourists." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
