@@ -19,6 +19,9 @@ SafeVoyage is a 9responsive web application designed with an urgent yet accessib
 
 **********************DEMO VIDEO*************************
 https://drive.google.com/file/d/1sZaJUi5wqGKHXLh5dHcLg5IQdBy2eYie/view?usp=sharing
+
+
+
 ->Key Features
 
 1.Tourist Mobile App View
